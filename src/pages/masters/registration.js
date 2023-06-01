@@ -1,5 +1,5 @@
 const shortid = require('shortid')
-const request = require('request')
+const fetch = require('unfetch')
 const steamId = require('../../lib/steamId')
 
 async function view(templates, masters, req, res) {
@@ -124,19 +124,10 @@ async function post(templates, masters, steam_user, config, req, res) {
     player.previous_rank = null
   }
 
-  const options = {
-    url: `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${config.server.steam_api_key}&steamids=${players.map((p) => p.steam_id_64).join(',')}`,
-    json: true
-  }
-  const asyncRequest = () => new Promise((resolve, reject) => request(options, function (error, response, body) {
-    if( error ){
-      reject(error)
-    }
-    resolve(body)
-  }))
+  const url = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${config.server.steam_api_key}&steamids=${players.map((p) => p.steam_id_64).join(',')}`
 
-  const playersRequest = await asyncRequest()
-  const steamPlayers = playersRequest.response.players
+  const playersResponse = await fetch(url)
+  const steamPlayers = playersResponse.json().players
   for (const steamPlayer of steamPlayers) {
     const player = players.find((p) => p.steam_id_64 === steamPlayer.steamid)
     player.name = steamPlayer.personaname

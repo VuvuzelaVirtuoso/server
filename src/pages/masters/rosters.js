@@ -1,5 +1,5 @@
 const shortid = require('shortid')
-const request = require('request')
+const fetch = require('unfetch')
 const steamId = require('../../lib/steamId')
 
 async function list(templates, masters, req, res) {
@@ -125,20 +125,10 @@ async function post(masters, steam_user, config, req, res) {
     previous_rank: null
   }
 
-  const options = {
-    url: `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${config.server.steam_api_key}&steamids=${player.steam_id_64}`,
-    json: true
-  }
-  const asyncRequest = () => new Promise((resolve, reject) => request(options, function (error, response, body) {
-    if( error ){
-      reject(error)
-    }
-    resolve(body)
-  }))
+  const url = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${config.server.steam_api_key}&steamids=${player.steam_id_64}`
 
-  const playersRequest = await asyncRequest()
-
-  const steamPlayer = playersRequest.response.players[0]
+  const playersResponse = await fetch(url)
+  const steamPlayer = playersResponse.json().players[0]
   player.name = steamPlayer.personaname
   player.avatar = (steamPlayer.avatar || '/assets/seal-icon.png').replace('.jpg', '_full.jpg')
 

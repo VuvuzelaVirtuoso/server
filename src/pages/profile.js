@@ -1,4 +1,4 @@
-const request = require('request')
+const fetch = require('unfetch')
 const heroes = require('../assets/heroes.json')
 
 function view(
@@ -11,11 +11,7 @@ function view(
       })
   }
   viewerHasPlayed.then(viewerHasPlayed => {
-    return request({
-      url: 'https://api.opendota.com/api/players/' + req.params.steam_id + '/heroes?date=180',
-      json: true
-    }, function (error, response, body) {
-
+    return fetch('https://api.opendota.com/api/players/' + req.params.steam_id + '/heroes?date=180').then(r => r.json()).then(body => {
       const top5 = body.length ? body.slice(0,5) : []
       const notableHeroes = top5.map(hero => {
         hero.picture =
