@@ -5,7 +5,6 @@ const config = require('./config')(env)
 // Node & NPM
 const path = require('path')
 const http = require('http')
-const https = require('https')
 const express = require('express')
 const csurf = require('csurf')
 const bodyParser = require('body-parser')
@@ -16,7 +15,6 @@ const passportSteam = require('passport-steam')
 const pg = require('pg')
 const pool = new pg.Pool(config.db)
 const PGStore = require('connect-pg-simple')(session)
-const redirectHttps = require('redirect-https')
 const templates = require('pug-tree')(
   path.join(__dirname, 'templates'), config.templates)
 const pairings = require('swiss-pairing')({ maxPerRound: 2 })
@@ -42,7 +40,6 @@ const vouch = require('./repos/vouch')(pool)
 // lib
 const steamId = require('./lib/steamId')
 const auth = require('./lib/auth')(admin, steam_user, profile, steamId)
-const credentials = require('./lib/credentials')(config.server)
 
 // Auth controller
 const openid = require('./api/openid')(config)
@@ -140,9 +137,8 @@ passport.deserializeUser((user, done) => {
   })
 })
 
-const realm = 'http' + (credentials ? 's' : '') + '://' + config.server.host +
-      ':' + (credentials ? config.server.https_port : config.server.port)
-passport.use(new passportSteam.Strategy({
+const realm = 'http' + (config.server.host === 'localhost' ? '' : 's') + '://' + config.server.host
+passport.use('steam', new passportSteam.Strategy({
   returnURL: realm + '/auth/steam/return',
   realm: realm,
   apiKey: config.server.steam_api_key
@@ -327,27 +323,10 @@ migration.migrateIfNeeded(
   .then(versions => {
     console.log(
       `RUN ${versions.filter(version => version !== false).length} MIGRATIONS`)
-
-    if (credentials) {
-      http.createServer(redirectHttps({
-        port: config.server.https_port,
-        trustProxy: true
-      })).listen(config.server.port, () => {
-        console.log('Redirecting from HTTP to HTTPS on port ' +
-          config.server.port)
-      })
-      https.createServer(credentials, app).listen(config.server.https_port,
-        () => {
-          console.log('Listening to HTTPS connections on port ' +
-            config.server.https_port)
-        })
-    } else {
-      http.createServer(app).listen(config.server.port, () => {
-        console.log('Listening to HTTP connections on port ' +
-          config.server.port)
-      })
-    }
-
+    http.createServer(app).listen(config.server.port, () => {
+      console.log('Listening to HTTP connections on port ' +
+        config.server.port)
+    })
   }).catch(err => {
     console.error(err)
   })

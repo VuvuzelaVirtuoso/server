@@ -1,16 +1,18 @@
-HOST?=localhost
+PORT?=80
+ifeq ($(CODESPACES), true)
+	HOST="$(CODESPACE_NAME)-$(PORT).$(GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN)"
+else
+  HOST="localhost"
+endif
 POSTGRES_USER?="postgres"
 POSTGRES_PASSWORD?="postgres"
-STEAM_BOT_USERNAME?=""
-STEAM_BOT_PASSWORD?=""
 
 .PHONY: check
 check:
 	@echo "HOST=$(HOST)"
+	@echo "PORT=$(PORT)"
 	@echo "POSTGRES_USER=$(POSTGRES_USER)"
 	@echo "POSTGRES_USER=$(POSTGRES_USER)"
-	@echo "STEAM_BOT_USERNAME=$(STEAM_BOT_USERNAME)"
-	@echo "STEAM_BOT_PASSWORD=$(STEAM_BOT_PASSWORD)"
 	@echo "STEAM_API_KEY=$(STEAM_API_KEY)"
 	@echo "SECRET=$(SECRET)"
 
@@ -39,10 +41,9 @@ build:
 .PHONY: run
 run: check_key check_secret
 	HOST="$(HOST)" \
+	PORT="$(PORT)" \
 	POSTGRES_USER="$(POSTGRES_USER)" \
 	POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)" \
-	STEAM_BOT_USERNAME="$(STEAM_BOT_USERNAME)" \
-	STEAM_BOT_PASSWORD="$(STEAM_BOT_PASSWORD)" \
 	STEAM_API_KEY="$(STEAM_API_KEY)" \
 	SECRET="$(SECRET)" \
-	docker-compose up
+	docker-compose up --build

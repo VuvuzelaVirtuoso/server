@@ -1,4 +1,4 @@
-function createUser(steam_user, profile, steamId, user_profile) {
+function createUser(steam_user, admin, profile, steamId, user_profile) {
   const id = steamId.from64to32(user_profile.id)
   const name = user_profile.displayName
   const avatar = getAvatar(user_profile)
@@ -6,6 +6,22 @@ function createUser(steam_user, profile, steamId, user_profile) {
     return user
   }).catch(() => {
     return null
+  }).then(existingUser => {
+    if (!existingUser) {
+      return admin.getAdmins().then(admins => {
+        if (admins.length === 0) {
+          return admin.saveAdmin({
+            steam_id: id.toString(),
+            group_id: '_'
+          }).then(() => {
+            console.log('Created first admin')
+            return existingUser
+          })
+        }
+        return existingUser
+      })
+    }
+    return existingUser
   }).then(existingUser => {
     const currentSolo = existingUser ? existingUser.solo_mmr : 0
     const currentParty = existingUser ? existingUser.party_mmr : 0
@@ -64,7 +80,7 @@ function getAvatar(profile) {
 
 module.exports = (admin, steam_user, profile, steamId) => {
   return {
-    createUser: createUser.bind(null, steam_user, profile, steamId),
+    createUser: createUser.bind(null, steam_user, admin, profile, steamId),
     inflateUser: inflateUser.bind(null, admin, profile, steamId),
     getAvatar: getAvatar
   }
