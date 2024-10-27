@@ -1,6 +1,3 @@
-const axios = require('axios')
-const heroes = require('../assets/heroes.json')
-
 function view(
   templates, steam_user, profile, season, vouch, team_player, steamId, player, req, res) {
   let viewerHasPlayed = Promise.resolve(null)
@@ -11,66 +8,47 @@ function view(
       })
   }
   viewerHasPlayed.then(viewerHasPlayed => {
-    return axios.get('https://api.opendota.com/api/players/' + req.params.steam_id + '/heroes?date=180').then(({data}) => {
-      const top5 = data.length ? data.slice(0, 5) : []
-      const notableHeroes = top5.map(hero => {
-        hero.picture =
-          'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/' +
-          heroes[hero['hero_id']]['name'].substr(14) + '.png'
-        hero.localName = heroes[hero['hero_id']]['localized_name']
-        return hero
-      })
-      return notableHeroes
-    }).catch((err) => {
-      console.error(err.toJSON())
-      if (err.response) {
-        console.log(err.response.headers)
-      }
-      return []
-    }).then((notableHeroes) => {
-      return season.getActiveSeason().then(active_season => {
-        return profile.getProfile(req.params.steam_id).then(_profile => {
-          if (!_profile) {
-            res.sendStatus(404)
-            return
-          }
-          _profile.id64 = steamId.from32to64(_profile.steam_id)
-          return player.hasFalseActivity(active_season.id, _profile.steam_id).then(numberFalseActivity => {
-            return team_player.hasPlayed(_profile.steam_id)
-              .then(({ has_played }) => {
-                return vouch.isVouched(_profile.steam_id)
-                  .then(result => {
-                    return team_player.getPlayerTeams(_profile.steam_id)
-                      .then(teamsPlayed => {
-                        return profile.getProfile(result.voucher_id).then(voucher => {
-                          result.voucher = voucher
-                          result.teamsPlayed = teamsPlayed
-                          return result
-                        })
-                      }).then(({ is_vouched, voucher, teamsPlayed }) => {
-                        const description = `RD2L Player ${_profile.name}
-                        Current Rank: ${_profile.rank}
-                        Played on team(s): ${teamsPlayed.map(x => x.name).join(', ')}.`
-                        const html = templates.profile.view({
-                          description: description,
-                          user: req.user,
-                          profile: _profile,
-                          active_season: active_season,
-                          vouched: is_vouched,
-                          voucher: voucher,
-                          has_played: has_played,
-                          teamsPlayed: teamsPlayed,
-                          numSeasonsFalseActivity: numberFalseActivity.count,
-                          csrfToken: req.csrfToken(),
-                          notableHeroes: notableHeroes,
-                          can_vouch: (req.user && req.user.isAdmin)
-                            || (viewerHasPlayed && viewerHasPlayed.has_played)
-                        })
-                        res.send(html)
+    return season.getActiveSeason().then(active_season => {
+      return profile.getProfile(req.params.steam_id).then(_profile => {
+        if (!_profile) {
+          res.sendStatus(404)
+          return
+        }
+        _profile.id64 = steamId.from32to64(_profile.steam_id)
+        return player.hasFalseActivity(active_season.id, _profile.steam_id).then(numberFalseActivity => {
+          return team_player.hasPlayed(_profile.steam_id)
+            .then(({ has_played }) => {
+              return vouch.isVouched(_profile.steam_id)
+                .then(result => {
+                  return team_player.getPlayerTeams(_profile.steam_id)
+                    .then(teamsPlayed => {
+                      return profile.getProfile(result.voucher_id).then(voucher => {
+                        result.voucher = voucher
+                        result.teamsPlayed = teamsPlayed
+                        return result
                       })
-                  })
-              })
-          })
+                    }).then(({ is_vouched, voucher, teamsPlayed }) => {
+                      const description = `RD2L Player ${_profile.name}
+                      Current Rank: ${_profile.rank}
+                      Played on team(s): ${teamsPlayed.map(x => x.name).join(', ')}.`
+                      const html = templates.profile.view({
+                        description: description,
+                        user: req.user,
+                        profile: _profile,
+                        active_season: active_season,
+                        vouched: is_vouched,
+                        voucher: voucher,
+                        has_played: has_played,
+                        teamsPlayed: teamsPlayed,
+                        numSeasonsFalseActivity: numberFalseActivity.count,
+                        csrfToken: req.csrfToken(),
+                        can_vouch: (req.user && req.user.isAdmin)
+                          || (viewerHasPlayed && viewerHasPlayed.has_played)
+                      })
+                      res.send(html)
+                    })
+                })
+            })
         })
       })
     })
