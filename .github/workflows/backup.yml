@@ -37,12 +37,6 @@ jobs:
             -F "payload_json={}" \
             -F "file0=@${{ steps.dump.outputs.FILENAME }}" \
             ${{ secrets.DISCORD_WEBHOOK_URL }} > /dev/null
-      - name: Upload to Github
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.dump.outputs.FILENAME }}
-          path: ${{ steps.dump.outputs.FILENAME }}
-          retention-days: 7
       - name: Remove backup directory
         run: |
           rm -f ${{ steps.dump.outputs.FILENAME }}
