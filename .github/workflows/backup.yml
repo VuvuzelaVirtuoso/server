@@ -29,7 +29,7 @@ jobs:
         id: dump
         run: |
           export FILENAME="backup_$(date +%Y-%m-%d).dump"
-          echo "FILENAME=$FILENAME\n" >> $GITHUB_OUTPUT
+          echo "FILENAME=$FILENAME" >> $GITHUB_OUTPUT
           pg_dump --format=custom --compress=9 --dbname="postgres://${{ secrets.DATABASE_USERNAME }}:${{ secrets.DATABASE_PASSWORD }}@${{ secrets.DATABASE_HOST }}:${{ secrets.DATABASE_PORT }}/${{ secrets.DATABASE_NAME }}" --file="$FILENAME"
       - name: Upload to Discord
         run: |
